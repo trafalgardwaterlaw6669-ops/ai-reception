@@ -1,5 +1,4 @@
-import { db } from "../lib/firebase";
-import { collection, query, where, getDocs, writeBatch, doc } from "firebase/firestore";
+import { adminDb } from "../lib/firebase-admin.js";
 
 export function startCronJobs() {
   console.log("Starting appointment reminder cron job...");
@@ -13,18 +12,16 @@ export function startCronJobs() {
       const tomorrowStr = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
       const nowStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
 
-      // Fetch appointments for tomorrow and today using client SDK
-      const appointmentsRef = collection(db, "appointments");
-      const q = query(appointmentsRef, 
-        where("date", "in", [nowStr, tomorrowStr])
-      );
-      const snapshot = await getDocs(q);
+      // Fetch appointments for tomorrow and today using admin SDK
+      const appointmentsRef = adminDb.collection("appointments");
+      const q = appointmentsRef.where("date", "in", [nowStr, tomorrowStr]);
+      const snapshot = await q.get();
 
       if (snapshot.empty) {
         return;
       }
 
-      const batch = writeBatch(db);
+      const batch = adminDb.batch();
       let hasUpdates = false;
       
       for (const document of snapshot.docs) {
@@ -47,7 +44,7 @@ export function startCronJobs() {
           console.log(`Sending reminder to ${data.patientName} for appointment at ${data.date} ${data.time}`);
           
           // 1. Log the reminder
-          const reminderRef = doc(collection(db, "reminders"));
+          const reminderRef = adminDb.collection("reminders").doc();
           batch.set(reminderRef, {
             appointmentId: document.id,
             patientName: data.patientName,
@@ -73,4 +70,5 @@ export function startCronJobs() {
     }
   }, 60 * 1000); // 1 minute
 }
+
 
