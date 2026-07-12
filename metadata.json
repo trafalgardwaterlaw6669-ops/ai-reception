@@ -1,0 +1,10 @@
+{
+  "name": "Remix: Remix: AI Dental Receptionist",
+  "description": "An intelligent AI receptionist for independent dental clinics, handling calls, appointments, and patient queries.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
