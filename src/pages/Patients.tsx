@@ -34,7 +34,8 @@ export function Patients() {
     const q = query(collection(db, 'patients'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        handleSeedPatients();
+        setPatients([]);
+        setLoading(false);
         return;
       }
       const fetched = snapshot.docs.map(doc => ({

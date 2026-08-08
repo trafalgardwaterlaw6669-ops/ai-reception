@@ -134,6 +134,70 @@ async function startServer() {
     }
   });
 
+  // Manual trigger endpoint for 24h background SMS appointment reminders
+  app.post("/api/reminders/trigger", async (req, res) => {
+    try {
+      const { runReminderCheck } = await import("./src/server/cron");
+      const result = await runReminderCheck();
+      res.json({
+        success: true,
+        message: `Background SMS service executed successfully. Sent ${result.processedCount} reminder(s).`,
+        processedCount: result.processedCount,
+        sentReminders: result.sentReminders
+      });
+    } catch (error: any) {
+      console.error("SMS Reminder trigger error:", error);
+      res.status(500).json({ error: error?.message || "Failed to trigger SMS reminders." });
+    }
+  });
+
+  // Admin endpoint to purge all fake data / collections
+  app.post("/api/admin/clear-data", async (req, res) => {
+    try {
+      const { db } = await import("./src/lib/firebase.js");
+      const { collection, getDocs, writeBatch } = await import("firebase/firestore");
+      const collections = [
+        'patients',
+        'appointments',
+        'messages',
+        'callLogs',
+        'reminders',
+        'conversations',
+        'aiMemories',
+        'unanswered_questions',
+        'clinic_facts'
+      ];
+
+      let deletedCount = 0;
+      for (const colName of collections) {
+        const colRef = collection(db, colName);
+        const snapshot = await getDocs(colRef);
+        if (!snapshot.empty) {
+          const batchSize = 400;
+          let batch = writeBatch(db);
+          let count = 0;
+          for (const docSnap of snapshot.docs) {
+            batch.delete(docSnap.ref);
+            count++;
+            deletedCount++;
+            if (count % batchSize === 0) {
+              await batch.commit();
+              batch = writeBatch(db);
+            }
+          }
+          if (count % batchSize !== 0) {
+            await batch.commit();
+          }
+        }
+      }
+
+      res.json({ success: true, message: `Purged ${deletedCount} document(s) from database.` });
+    } catch (error: any) {
+      console.error("Clear data API error:", error);
+      res.status(500).json({ error: error?.message || "Failed to clear database." });
+    }
+  });
+
   // --- Vite Middleware for Development ---
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

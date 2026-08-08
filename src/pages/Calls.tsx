@@ -90,7 +90,8 @@ export function Calls() {
     const q = query(collection(db, 'callLogs'), orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        handleSeedCalls();
+        setCalls([]);
+        setLoading(false);
         return;
       }
       const fetchedCalls = snapshot.docs.map(doc => ({

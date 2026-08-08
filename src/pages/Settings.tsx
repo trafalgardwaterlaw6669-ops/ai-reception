@@ -8,7 +8,9 @@ import {
   Save,
   Sparkles,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -24,6 +26,29 @@ export function Settings() {
   const [tempClinicName, setTempClinicName] = useState(demoSettings.clinicName);
   const [tempPhoneNumber, setTempPhoneNumber] = useState(demoSettings.phoneNumber);
   const [tempCity, setTempCity] = useState(demoSettings.city);
+
+  const [isClearing, setIsClearing] = useState(false);
+
+  const handleClearAllData = async () => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer définitivement toutes les données factices (patients, rendez-vous, messages, appels) ?")) {
+      return;
+    }
+    setIsClearing(true);
+    try {
+      const res = await fetch('/api/admin/clear-data', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Toutes les données factices ont été supprimées avec succès !");
+      } else {
+        toast.error(data.error || "Erreur lors de la suppression des données.");
+      }
+    } catch (err) {
+      console.error("Error clearing database:", err);
+      toast.error("Échec de la connexion au serveur pour purger les données.");
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   const handleSaveDemoSettings = () => {
     updateDemoSettings({
@@ -660,19 +685,35 @@ export function Settings() {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => toggleDemoMode(!isDemoModeActive)}
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-extrabold shadow-sm transition-all cursor-pointer whitespace-nowrap",
-                      isDemoModeActive 
-                        ? "bg-red-600 text-white hover:bg-red-500" 
-                        : "bg-indigo-600 text-white hover:bg-indigo-500"
-                    )}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    {isDemoModeActive ? "Désactiver la Démo" : "Activer la Démo Instantanée"}
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleDemoMode(!isDemoModeActive)}
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-extrabold shadow-sm transition-all cursor-pointer whitespace-nowrap",
+                        isDemoModeActive 
+                          ? "bg-red-600 text-white hover:bg-red-500" 
+                          : "bg-indigo-600 text-white hover:bg-indigo-500"
+                      )}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {isDemoModeActive ? "Désactiver la Démo" : "Activer la Démo Instantanée"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleClearAllData}
+                      disabled={isClearing}
+                      className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-extrabold shadow-sm transition-all cursor-pointer whitespace-nowrap bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 disabled:opacity-50"
+                    >
+                      {isClearing ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-rose-600" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 text-rose-600" />
+                      )}
+                      Effacer toutes les données factices
+                    </button>
+                  </div>
                 </div>
 
                 {/* What's Injected Section */}

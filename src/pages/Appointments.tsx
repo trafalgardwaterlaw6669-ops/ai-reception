@@ -158,7 +158,7 @@ export function Appointments() {
     const q = query(collection(db, 'appointments'), orderBy('date', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        handleSeedAppointments();
+        setRealAppointments([]);
         return;
       }
       const fetched = snapshot.docs.map(doc => ({

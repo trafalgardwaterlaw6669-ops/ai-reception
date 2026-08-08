@@ -177,7 +177,8 @@ export function SelfImprovingAi() {
     const q = query(collection(db, 'unanswered_questions'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        handleSeedData();
+        setQuestions([]);
+        setLoadingUnanswered(false);
         return;
       }
       const fetched = snapshot.docs.map(doc => ({

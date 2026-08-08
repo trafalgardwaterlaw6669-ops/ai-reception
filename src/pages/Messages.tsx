@@ -62,7 +62,7 @@ export function Messages() {
     const q = query(collection(db, 'messages'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        handleSeedMessages();
+        setMessages([]);
         return;
       }
       const fetched = snapshot.docs.map(doc => ({

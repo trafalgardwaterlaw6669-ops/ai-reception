@@ -146,7 +146,8 @@ export function AiMemory() {
     const q = query(collection(db, 'aiMemories'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (snapshot.empty) {
-        handleSeedMemories();
+        setMemories([]);
+        setLoading(false);
         return;
       }
       const fetched = snapshot.docs.map(doc => ({

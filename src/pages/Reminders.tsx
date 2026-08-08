@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { Bell, Clock, Search, Smartphone, Mail, AlertCircle, Loader2 } from 'lucide-react';
+import { Bell, Clock, Search, Smartphone, Mail, AlertCircle, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export function Reminders() {
   const [reminders, setReminders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [triggering, setTriggering] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -28,6 +29,28 @@ export function Reminders() {
     return () => unsubscribe();
   }, []);
 
+  const triggerBackgroundSMS = async () => {
+    setTriggering(true);
+    try {
+      const res = await fetch('/api/reminders/trigger', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.processedCount > 0) {
+          toast.success(`${data.processedCount} rappel(s) SMS 24h envoyé(s) avec succès !`);
+        } else {
+          toast.info("Service de rappel 24h exécuté : aucun nouveau rendez-vous à rappeler.");
+        }
+      } else {
+        toast.error(data.error || "Erreur lors du déclenchement du service SMS.");
+      }
+    } catch (err) {
+      console.error("Failed to trigger SMS service:", err);
+      toast.error("Impossible de contacter le service d'arrière-plan.");
+    } finally {
+      setTriggering(false);
+    }
+  };
+
   const filteredReminders = reminders.filter(r => 
     r.patientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.phone?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,6 +64,20 @@ export function Reminders() {
           <p className="mt-2 text-sm text-slate-600">
             Journal de tous les rappels SMS et e-mails envoyés automatiquement aux patients 24 heures avant leur rendez-vous.
           </p>
+        </div>
+        <div className="mt-4 sm:mt-0 flex items-center gap-3">
+          <button
+            onClick={triggerBackgroundSMS}
+            disabled={triggering}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors disabled:opacity-50"
+          >
+            {triggering ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+            Exécuter les rappels 24h
+          </button>
         </div>
       </div>
 
